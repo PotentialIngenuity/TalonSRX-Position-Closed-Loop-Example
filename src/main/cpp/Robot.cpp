@@ -32,8 +32,6 @@ public:
 	bool _lastButton2 = false;
 	bool _lastButton3 = false;
 
-	bool _wasHoldingPresentPositionLastIteration = false;
-
 	/** save the target position to servo to */
 	double targetPositionRotations;
 
@@ -65,10 +63,10 @@ public:
 		_talon_right->Config_IntegralZone(kPIDLoopIdx, 50, kTimeoutMs);
 
 		/* set deadband */
-		_talon_right->ConfigNeutralDeadband(_deadBand, 0);
+		_talon_right->ConfigNeutralDeadband(_deadBand, kTimeoutMs);
 
 		/* set closed loop ramping rate */
-		_talon_right->ConfigClosedloopRamp(.01, 0);
+		_talon_right->ConfigClosedloopRamp(.01, kTimeoutMs);
 	}
 
 	/**
@@ -77,7 +75,10 @@ public:
 	void TeleopPeriodic() {
 		/* get gamepad axis */
 		double leftYstick = _joy->GetRawAxis(1) * -1;
+		
 		double motorOutputRight = _talon_right->GetMotorOutputPercent();
+
+		/* get gamepad buttons */
 		bool button1 = _joy->GetRawButton(1);
 		bool button2 = _joy->GetRawButton(2);
 		bool button3 = _joy->GetRawButton(3);
@@ -92,21 +93,21 @@ public:
 		/* on button1 press enter closed-loop mode on target position */
 		if (!_lastButton1 && button1) {
 			/* Position mode - button just pressed */
-		 	targetPositionRotations = 5.0 * 80 * 12; /* 5 Rotations */
+		 	targetPositionRotations = 5.0 * 80 * 12; /* 5 Rotations - Cimcoder has a resolution of 80 - overall gear ratio to mechanism is 12:1 */
 		 	_talon_right->Set(ControlMode::Position, targetPositionRotations); /* 5 rotations */
 		}
 		
 		/* on button2 press enter closed-loop mode on target position */
 		else if (!_lastButton2 && button2) {
 			/* Position mode - button just pressed */
-		 	targetPositionRotations = 10.0 * 80 * 12; /* 10 Rotations */
+		 	targetPositionRotations = 10.0 * 80 * 12; /* 10 Rotations - Cimcoder has a resolution of 80 - overall gear ratio to mechanism is 12:1 */
 		 	_talon_right->Set(ControlMode::Position, targetPositionRotations); /* 10 rotations */
 		}
 
 		/* on button3 press enter closed-loop mode on target position */
 		else if (!_lastButton3 && button3) {
 			/* Position mode - button just pressed */
-		 	targetPositionRotations = 15.0 * 80 * 12; /* 15 Rotations in */
+		 	targetPositionRotations = 15.0 * 80 * 12; /* 15 Rotations in - Cimcoder has a resolution of 80 - overall gear ratio to mechanism is 12:1 */
 		 	_talon_right->Set(ControlMode::Position, targetPositionRotations); /* 15 rotations */
 		}
 
@@ -114,7 +115,7 @@ public:
 		else {
 			/* check if joystick is moving */
 			if (abs(leftYstick) > 0.01) {
-				int currentPos = _talon_right->GetSelectedSensorPosition(0);
+				int currentPos = _talon_right->GetSelectedSensorPosition(kPIDLoopIdx);
 				if ( targetPositionRotations - 50 > currentPos  || currentPos > targetPositionRotations + 50) {
 					targetPositionRotations = leftYstick * 150 + currentPos;
 					_talon_right->Set(ControlMode::Position, targetPositionRotations);
